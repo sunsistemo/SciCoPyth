@@ -31,9 +31,8 @@ def animate(frame_number):
     for i in range(1, N):     # at i = 0, N  we have ψ = 0 (boundary condition)
         u2[i] = 2 * u1[i] - u0[i] + c * (dt / dx) ** 2 * (u1[i + 1] - 2 * u1[i] + u1[i - 1])
 
-    for i in range(1, N):
-        u0[i] = u1[i]
-        u1[i] = u2[i]
+    u0[:] = u1[:]
+    u1[:] = u2[:]
     line.set_ydata(u2)  # update the ani data
     return line,
 
