@@ -11,6 +11,8 @@ latSize = 64 + 2               # lattice + padding
 growthPar = .5
 lattice = np.zeros((latSize, latSize))
 # x is i is VERTICAL and y is j is HORIZONTAL
+walkerLattice = np.copy(lattice)
+lattice[latSize-2, latSize//2] = 1
 
 class Position:
     def __init__(self, x, y):
@@ -67,25 +69,37 @@ def grow(lattice, steps):
 #################
 # VISUALIZATION #
 #################
+walker = Walker(lattice, latSize//2,latSize//2)
+walkerLattice = np.copy(lattice)
+walkerLattice[walker.pos.x, walker.pos.y] = 1
+
 fig, ax = plt.subplots()
-hMap = ax.imshow(lattice)
+hMap = ax.imshow(walkerLattice)
 
 def animate(frame_number):
     global lattice
+
     # lattice = grow_ani_step(lattice)
     lattice = next(ani_gen)
     hMap.set_array(lattice)
     return hMap,
 
-def grow_ani_step(lattice):
+def walk_ani_step(lattice):
     while True:
-        walker = Walker(lattice, randint(0, len(lattice[0]) - 1), latSize//2)
+        walker = Walker(lattice, 0, randint(1, len(lattice[0]) - 2))
+        # print("new walker at", walker.pos.x, walker.pos.y)
         while walker.alive:
             if walker.check_friends():
                 lattice = walker.merge()
+                yield walkerLattice
+
+
             walker.step()
-            yield lattice
-        yield lattice
+            walkerLattice = np.copy(lattice)
+            walkerLattice[walker.pos.x, walker.pos.y] = 1
+
+            # yield walkerLattice
+        # yield walkerLattice
 
 
 def start_animation():
@@ -94,13 +108,14 @@ def start_animation():
     plt.show()
 
 def init():
-    hMap.set_array(np.ma.array(lattice))
+    hMap.set_array(np.ma.array(walkerLattice))
     return hMap,
 
-ani_gen = grow_ani_step(lattice)
+ani_gen = walk_ani_step(lattice)
 
 # lattice = grow(lattice, 1000)
 # plt.imshow(lattice)
 # plt.show()
 
 start_animation()
+print("done")
