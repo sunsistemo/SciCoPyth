@@ -8,7 +8,7 @@ from tqdm import trange
 
 
 latSize = 64 + 2               # lattice + padding
-growthPar = .5
+p_stick = .1
 lattice = np.zeros((latSize, latSize))
 # x is i is VERTICAL and y is j is HORIZONTAL
 walkerLattice = np.copy(lattice)
@@ -26,8 +26,8 @@ class Walker:
         self.pos = Position(x, y)
         self.alive = True
 
-    def step(self):
-        dx, dy = choice([(1, 0), (-1, 0), (0, 1), (0, -1)])
+    def step(self, stepList = [(1, 0), (-1, 0), (0, 1), (0, -1)]):
+        dx, dy = choice(stepList)
         self.pos = Position(self.pos.x + dx, self.pos.y + dy)
 
         if self.pos.x > len(self.lattice) - 2 or self.pos.x < 1:
@@ -43,20 +43,32 @@ class Walker:
         friends = self.lattice[i-1,j] + self.lattice[i+1,j] + self.lattice[i,j-1] + self.lattice[i,j+1]
         return (friends > 0)
 
-    def merge(self):
-        self.lattice[self.pos.x, self.pos.y] = 1
-        self.die()
-        return self.lattice
+    def merge(self, stickProb):
+        if random() < stickProb:
+            self.lattice[self.pos.x, self.pos.y] = 1
+            self.die()
+            return self.lattice
+        else:
+            self.no_merge()
+            return self.lattice
+
+    def no_merge(self):
+        choiceList = [nb for nb in [(1, 0), (-1, 0), (0, 1), (0, -1)]
+                      if lattice[self.pos.x + nb[0], self.pos.y + nb[1]] == 0]
+        if len(choiceList) < 0:
+            self.step(choiceList)
+        else:
+            self.die()
 
     def die(self):
         self.alive = False
 
 
 def grow_step(lattice):
-    walker = Walker(lattice, randint(0, len(lattice[0]) - 1), latSize//2)
+    walker = Walker(lattice, 1, randint(1, len(lattice[0]) - 1))
     while walker.alive:
         if walker.check_friends():
-            lattice = walker.merge()
+            lattice = walker.merge(p_stick)
         walker.step()
     return lattice
 
@@ -69,7 +81,7 @@ def grow(lattice, steps):
 #################
 # VISUALIZATION #
 #################
-walker = Walker(lattice, latSize//2,latSize//2)
+walker = Walker(lattice, 1, randint(1, len(lattice[0]) - 2))
 walkerLattice = np.copy(lattice)
 walkerLattice[walker.pos.x, walker.pos.y] = 1
 
@@ -84,21 +96,24 @@ def animate(frame_number):
     hMap.set_array(lattice)
     return hMap,
 
-def walk_ani_step(lattice):
+def grow_ani_step(lattice, aniWalk):
     while True:
-        walker = Walker(lattice, 0, randint(1, len(lattice[0]) - 2))
+        walker = Walker(lattice, 1, randint(1, len(lattice[0]) - 2))
         # print("new walker at", walker.pos.x, walker.pos.y)
         while walker.alive:
             if walker.check_friends():
-                lattice = walker.merge()
+                lattice = walker.merge(p_stick)
+                walkerLattice = np.copy(lattice)
                 yield walkerLattice
 
-
             walker.step()
-            walkerLattice = np.copy(lattice)
-            walkerLattice[walker.pos.x, walker.pos.y] = 1
-
-            # yield walkerLattice
+            if aniWalk:
+                walkerLattice = np.copy(lattice)
+                try:
+                    walkerLattice[walker.pos.x, walker.pos.y] = 1
+                except:
+                    print(walker.pos)
+                yield walkerLattice
         # yield walkerLattice
 
 
@@ -111,8 +126,7 @@ def init():
     hMap.set_array(np.ma.array(walkerLattice))
     return hMap,
 
-ani_gen = walk_ani_step(lattice)
-
+ani_gen = grow_ani_step(lattice, False)
 # lattice = grow(lattice, 1000)
 # plt.imshow(lattice)
 # plt.show()
