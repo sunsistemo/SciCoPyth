@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.animation as ani
+from matplotlib import animation
 from math import erfc, erf, sqrt, log10
 
 L = 1.0
