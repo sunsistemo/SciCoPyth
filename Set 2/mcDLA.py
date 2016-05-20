@@ -7,8 +7,8 @@ from collections import namedtuple
 from tqdm import trange
 
 
-latSize = 64 + 2               # lattice + padding
-p_stick = .1
+latSize = 256 + 2               # lattice + padding
+p_stick = 0.5
 lattice = np.zeros((latSize, latSize))
 # x is i is VERTICAL and y is j is HORIZONTAL
 walkerLattice = np.copy(lattice)

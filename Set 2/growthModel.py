@@ -6,8 +6,10 @@ from random import random
 
 from tqdm import trange
 
-latSize = 64 + 2               # lattice + padding
-growthPar = .5
+latSize = 256 + 2               # lattice + padding
+growthPar = 1.5
+omega = 1
+steps = 2000
 nutLattice = np.zeros((latSize,latSize))
 nutLattice[0] = 1.              # top boundary
 objLattice =np.zeros((latSize,latSize))
@@ -43,6 +45,8 @@ def grow_step(objLattice, nutLattice):
         for j in range(1,latSize-1):
             if not objLattice[i,j]:
                 if check_connection(objLatticeOld, i, j):
+                    if nutLattice[i,j] < 0:
+                        print("negative nutrient!", nutLattice[i,j])
                     prob = (nutLattice[i,j] ** growthPar) / growthNorm
                     if random() < prob:
                         objLattice [i,j] = 1
@@ -68,6 +72,6 @@ def initNutLattice(nutLattice):
     return nutLattice
 
 nutLattice = initNutLattice(nutLattice)
-obj, nut = grow(objLattice, nutLattice, 1E-1, 1.75, 1000)
+obj, nut = grow(objLattice, nutLattice, 1E-1, omega, steps)
 plt.imshow(nut + obj)
 plt.show()
