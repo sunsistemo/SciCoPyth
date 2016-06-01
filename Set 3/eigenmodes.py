@@ -8,59 +8,87 @@ from scipy import sparse
 from scipy import linalg
 import scipy.sparse.linalg as spla
 
-latSize = 40
-eigNum = 3
-
-# Initialize finite difference matrix blocks
-Ar = np.zeros((1, latSize))
-Ar[0,0] = -4
-Ar[0,1] = 1
-
 # Function to turn the standard square domain into a circular domain
-def circDomain (latSize, M):
-    for i in range(latSize):
-        for j in range(latSize):
-            if sqrt((i-latSize/2.)**2 + (j-latSize/2.)**2) > latSize/2:
-                M[(i*latSize + j)] = 0
+def circDomain (size, M):
+    for i in range(size):
+        for j in range(size):
+            if sqrt((i-size/2.)**2 + (j-size/2.)**2) > size/2:
+                M[(i*size + j)] = 0
+                # M = np.delete(M,(i*size + j),0)
     return M
 
-def rectDomain (latSize, M, frac):
-    for i in range(latSize):
-        for j in range(latSize):
-            if sqrt((i-latSize/2.)**2 + (j-latSize/2.)**2) > latSize/2:
-                M[(i*latSize + j)] = 0
+def rectDomain (size, M, frac):
+    for i in range(size):
+        for j in range(size):
+            if i > size*frac:
+                M[(i*size + j)] = 0
+                # M = np.delete(M,(i*size + j),0)
     return M
 
-def solveSystem (latSize, switchS, shape="s"):
+def solveSystem (matSize, switchS, numEig, shape="r"):
     """
     Solve the eigenvalue problem for system of a certain shape and
-    latSize using either dense or sparse matrix methods. Shape is
+    matSize using either dense or sparse matrix methods. Shape is
     given as a single character "s" = square, "c" = circle, "r" =
     rectangle.
     Returns eigenvalues w array(1,M) and eigenvectors of length
-    latSize**2
+    matSize**2
     """
-
-    A = sparse.block_diag([linalg.toeplitz(Ar) for m in range(latSize)])
-    B = sparse.diags([1,1],[latSize,-latSize], (latSize**2, latSize**2))
+    Ar = np.zeros((1, matSize))
+    Ar[0,0] = -4
+    Ar[0,1] = 1
+    A = sparse.block_diag([linalg.toeplitz(Ar) for m in range(matSize)])
+    B = sparse.diags([1,1],[matSize,-matSize], (matSize**2, matSize**2))
     M = A + B
     M = M.toarray()
-    print(M)
     if shape is "c":
-        M = circDomain(latSize, M)
+        M = circDomain(matSize, M)
     elif shape is "r":
-        M = rectDomain(latSize, M, 0.5)
+        M = rectDomain(matSize, M, 0.5)
     if switchS:
-        M = sparse.csr_matrix(M)
-        (w, v) = spla.eigs(M, latSize)
+        M = sparse.csc_matrix(M)
+        w, v = spla.eigs(M, numEig, sigma=0)
     else:
-        (w, v) = linalg.eig(M)
-    return (w, v)
+        w, v = linalg.eig(M)
+    return (w, v.transpose())
 
-(w,v) = solveSystem(latSize, False)
-eigmod = v[:,eigNum].reshape((latSize,latSize))
-print(w)
-plt.title("Eigenmode #%d \n Frequency: %d" %(eigNum, w[eigNum].real) )
-plt.imshow(eigmod.real, cmap="hot")
-plt.colorbar()
-plt.show()
+def sortEigenmodes(w,v):
+    wOrder = np.argsort(w)
+    w,v = np.sort(w), v[wOrder]
+    wOrder = np.nonzero(w)
+    w,v = w[wOrder], v[wOrder]
+    w,v = w[::-1],v[::-1]
+    return w,v
+
+def plotEigenmode(w,v,eig):
+    eigmod = v[eig].reshape((sqrt(len(v[eig])),sqrt(len(v[eig]))))
+
+    plt.title("Eigenmode #%d \n Frequency: %f" %(eig, 1/w[eig].real))
+    plt.imshow(eigmod.real, cmap="hot")
+    plt.colorbar()
+    plt.show()
+
+def init():
+    u_im.set_array(np.ma.array(u))
+    return u_im
+
+
+def animate():
+    global u
+    u = step(u)
+    u_im.set_array(u)
+    # print(frame_number)
+    return u_im
+
+def start_animation():
+    ani = animation.FuncAnimation(fig, animate, None, init_func=init, interval=10, blit=True)
+    plt.show()
+
+
+if __name__=="__main__":
+    latSize = 100
+    eigNum = 100
+
+    w,v = solveSystem(latSize, True, latSize*2, "s")
+    w,v = sortEigenmodes(w,v)
+    plotEigenmode(w,v,2)
