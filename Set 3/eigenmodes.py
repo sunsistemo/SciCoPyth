@@ -63,10 +63,10 @@ def sortEigenmodes(w,v):
 def plotEigenmode(w,v,eig):
     eigmod = v[eig].reshape((sqrt(len(v[eig])),sqrt(len(v[eig]))))
 
-    plt.title("Eigenmode #%d \n Frequency: %f" %(eig, 1/w[eig].real))
+    plt.title("Eigenmode #%d \n Frequency: %f" %(eig + 1, -w[eig].real))
     plt.imshow(eigmod.real, cmap="hot")
-    plt.colorbar()
-    plt.show()
+    # plt.colorbar()
+    # plt.show()
 
 def init():
     u_im.set_array(np.ma.array(u))
@@ -87,8 +87,13 @@ def start_animation():
 
 if __name__=="__main__":
     latSize = 100
-    eigNum = 100
+    eigNum = 50
 
-    w,v = solveSystem(latSize, True, latSize*2, "s")
+    w,v = solveSystem(latSize, False, latSize*2, "c")
     w,v = sortEigenmodes(w,v)
-    plotEigenmode(w,v,2)
+    nlist = [0,1,2,3,10,20]
+    plt.figure(1)
+    for i in range(len(nlist)):
+        plt.subplot(2,len(nlist)/2,i+1)
+        plotEigenmode(w,v, nlist[i])
+    plt.show()
