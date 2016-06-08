@@ -15,8 +15,8 @@ def circDomain(size, M):
     for i in range(size):
         for j in range(size):
             if sqrt((i-size/2.)**2 + (j-size/2.)**2) > size/2:
-                M[(i*size + j)] = 0
-                M[:,(i*size + j)] = 0
+                M[(i*size + j), :] = 0
+                M[:, (i*size + j)] = 0
                 # M = np.delete(M,(i*size + j),0)
     return M
 
@@ -136,53 +136,61 @@ def plot_dstep_dependence():
     plt.legend(loc=4)
     plt.savefig("../../dstep_dependence.png", dpi=300)
 
-
-def plot_time():
-    latSize = 30
-    eig = 7
-
-    w,v = solveSystem(latSize, 1, False, latSize*2, "s")
+def plot_time_3D(latSize, shape, eig):
+    # latSize = 40
+    # eig = 43
+    # shape = "c"
+    w,v = solveSystem(latSize, 1, False, latSize*2, shape)
     w,v = sortEigenmodes(w,v)
     zmin = min(v[eig].real)
     zmax = max(v[eig].real)
     eigmod = v[eig].reshape((sqrt(len(v[eig])),sqrt(len(v[eig]))))
     eigfreq = w[eig].real
     wlength = 1/eigfreq
-    print(eigfreq,wlength/9)
+    times = list(np.arange(0,wlength*3.5,wlength*3.5/9))
+    fig = plt.figure()
+    for t in range(len(times)):
+        ax = plt.subplot(len(times)/3, 3, t+1, projection="3d")
+        time_step_eigmod = eigmod * cos(eigfreq * times[t])
+        X = np.arange(0, latSize, 1)
+        Y = np.arange(0, latSize, 1)
+        X, Y = np.meshgrid(X, Y)
+        Z = time_step_eigmod
+        ax.plot_surface(X,Y,Z, cmap = "hot",rstride=1,cstride=1, vmin=zmin, vmax=zmax)
+        ax.set_zlim(zmin, zmax)
+
+        plt.title("t = %.4f" %times[t])
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        ax.set_zticklabels([])
+    plt.suptitle("Time evolution of eigenmode %d" % (eig + 1))
+    plt.savefig("../../time_evolution_%s.png" %shape, dpi=300)
+
+def plot_time():
+    latSize = 50
+    eig = 18
+    w,v = solveSystem(latSize, 1, False, latSize*2, "c")
+    w,v = sortEigenmodes(w,v)
+    zmin = min(v[eig].real)
+    zmax = max(v[eig].real)
+    eigmod = v[eig].reshape((sqrt(len(v[eig])),sqrt(len(v[eig]))))
+    eigfreq = w[eig].real
+    wlength = 1/eigfreq
     times = list(np.arange(0,wlength*4,wlength*4/9))
 
     fig = plt.figure()
-    ax = plt.axes(frameon=False)
     for t in range(len(times)):
-        plt.subplot(len(times)/3, 3, t+1)
+        ax = plt.subplot(len(times)/3, 3, t+1)
         time_step_eigmod = eigmod * cos(eigfreq * times[t])
-        print(eigmod)
         plt.imshow(time_step_eigmod.real, cmap="hot", vmin=zmin, vmax=zmax)
-        plt.title(times[t])
+        plt.title("%.5f" %times[t])
         ax.xaxis.set_visible(False)
-        # plt.tight_layout()
+        ax.yaxis.set_visible(False)
+
     # plt.savefig("../../eigenmodes_%s.png" %shape, dpi=300)
     plt.show()
-
-
-# def plot_times():
-#     w,v = solveSystem(latSize, 1, False, latSize*2, shapes[0])
-#     w,v = sortEigenmodes(w,v)
-#     eigmod = v[1].reshape((sqrt(len(v[1])),sqrt(len(v[1]))))
-#     eigmod = eigmod
-
-#     fig = plt.figure()
-#     # fig.set_size_inches(8, 8)
-#     ax = plt.axes(frameon=False)
-#     for t in range(len(times)):
-#         for s in range(len(shapes)):
-#             plt.subplot(len(times)/3,3,t+1)
-#             plot_time_step([eigmod],w[1].real, times[t])
-#             plt.tight_layout()
-#     # plt.savefig("../../eigenmodes_%s.png" %shape, dpi=300)
-#     ax.title(w[1].real)
-#     plt.show()
-
 
 ## Functions for potential animation
 # def init():
@@ -202,10 +210,12 @@ def plot_time():
 
 if __name__=="__main__":
 
-    plot_eigenmodes()
+    # plot_eigenmodes()
 
     # plot_L_dependence()
 
     # plot_dstep_dependence()
-
-    # plot_time()
+    shapes = ["s","r","c"]
+    eigs = [4,16,27]
+    for i in range(len(shapes)):
+        plot_time_3D(40,shapes[i],eigs[i])
