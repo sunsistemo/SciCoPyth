@@ -16,7 +16,7 @@ def circDomain(size, M):
         for j in range(size):
             if sqrt((i-size/2.)**2 + (j-size/2.)**2) > size/2:
                 M[(i*size + j)] = 0
-                # M[:(i*size + j)] = 0
+                M[:,(i*size + j)] = 0
                 # M = np.delete(M,(i*size + j),0)
     return M
 
@@ -25,7 +25,7 @@ def rectDomain(size, M, frac):
         for j in range(size):
             if i > size*frac:
                 M[(i*size + j)] = 0
-                # M[:(i*size + j)] = 0
+                M[:,(i*size + j)] = 0
                 # M = np.delete(M,(i*size + j),0)
     return M
 
@@ -202,10 +202,10 @@ def plot_time():
 
 if __name__=="__main__":
 
-    # plot_eigenmodes()
+    plot_eigenmodes()
 
     # plot_L_dependence()
 
     # plot_dstep_dependence()
 
-    plot_time()
+    # plot_time()
